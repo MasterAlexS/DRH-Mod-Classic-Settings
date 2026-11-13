@@ -142,11 +142,22 @@ class SettingsReskinner {
 	}
 
 	/**
+	 * Determines whether an instance name corresponds to a category tab panel (`panel_2`, `panel_3`, etc.).
+	 * Uses simple string parsing instead of regex literals to ensure 100% compatibility with hxscript.
+	 */
+	static inline function isPanelTab(name:Null<String>):Bool {
+		if (name == null || name == "panel_two_scroll_panel") return false;
+		if (!StringTools.startsWith(name, "panel_")) return false;
+		return Std.parseInt(name.substr(6)) != null;
+	}
+
+	/**
 	 * Hides the post-1.0 hazard borders, dark background, and black grunge splats.
 	 *
 	 * Uses an explicit whitelist of functional component names (tab panels,
-	 * scroll list, arrows, slider, reset button, and close button) to ensure
-	 * we only hide background decorations without breaking any interactive UI.
+	 * scroll list, arrows, slider, reset button, and close button) plus a dynamic
+	 * pattern check for category panels (`panel_2` through `panel_8` and beyond)
+	 * to ensure we only hide background decorations without breaking any interactive UI.
 	 */
 	function hideOriginalBackdrop(clip:MovieClip):Void {
 		var functionalNames:Map<String, Bool> = [
@@ -156,12 +167,17 @@ class SettingsReskinner {
 			"panel_5" => true,
 			"panel_6" => true,
 			"panel_7" => true,
+			"panel_8" => true,
 			"panel_two_scroll_panel" => true,
 			"slider" => true,
 			"uparrow" => true,
 			"downarrow" => true,
+			"leftarrow" => true,
+			"rightarrow" => true,
 			"title_label" => true,
 			"reset_button" => true,
+			"reset_label" => true,
+			"Reset_Label" => true,
 			"close" => true,
 			"custom_settings_api_paging_bar" => true,
 			INJECTED_BASE_NAME => true,
@@ -173,7 +189,7 @@ class SettingsReskinner {
 			var child = clip.getChildAt(i);
 			if (child != null) {
 				var name = child.name;
-				if (name != null && functionalNames.exists(name)) {
+				if (name != null && (functionalNames.exists(name) || isPanelTab(name))) {
 					// Functional or injected element: keep visible
 				} else if (Std.isOfType(child, MovieClip) && (cast child : MovieClip).getChildByName("reset_label") != null) {
 					// Reset button clip: keep visible
@@ -314,11 +330,13 @@ class SettingsReskinner {
 	}
 
 	function styleCategoryTabsFromClip(clip:MovieClip):Void {
-		for (i in 2...8) {
-			var panel = clip.getChildByName("panel_" + i);
-			if (panel != null && Std.isOfType(panel, DisplayObjectContainer)) {
-				stylePanelLabels(cast panel);
+		var i = 0;
+		while (i < clip.numChildren) {
+			var child = clip.getChildAt(i);
+			if (child != null && isPanelTab(child.name) && Std.isOfType(child, DisplayObjectContainer)) {
+				stylePanelLabels(cast child);
 			}
+			i++;
 		}
 	}
 
