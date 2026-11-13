@@ -161,13 +161,6 @@ class SettingsReskinner {
 	 */
 	function hideOriginalBackdrop(clip:MovieClip):Void {
 		var functionalNames:Map<String, Bool> = [
-			"panel_2" => true,
-			"panel_3" => true,
-			"panel_4" => true,
-			"panel_5" => true,
-			"panel_6" => true,
-			"panel_7" => true,
-			"panel_8" => true,
 			"panel_two_scroll_panel" => true,
 			"slider" => true,
 			"uparrow" => true,
