@@ -26,8 +26,9 @@ class Main extends Mod {
 	var art:Null<SettingsReskinArt>;
 	var reskinner:Null<SettingsReskinner>;
 
-	// Keep track of clips we've already reskinned so we don't do the work twice
+	// Keep track of clips and popup objects we've already reskinned so we don't repeat work
 	var reskinnedClips:Map<DisplayObject, Bool> = new Map();
+	var hookedPopups:Map<SettingsPopup, Bool> = new Map();
 
 	override public function init(context:Context):Void {
 		this.context = context;
@@ -41,12 +42,28 @@ class Main extends Mod {
 		art = new SettingsReskinArt(facade);
 		reskinner = new SettingsReskinner(facade, art);
 
+		// Hook stage ADDED event in capture phase to catch SettingsPopup the instant it is added
+		var stage:Dynamic = context.overlay.stage;
+		if (stage == null && facade != null) stage = Reflect.field(facade, "stageRef");
+		if (stage != null) {
+			try {
+				stage.addEventListener(Event.ADDED, onDisplayObjectAdded, true);
+			} catch (eStage:Dynamic) {}
+		}
+
 		// Listen to each frame so we catch the moment the settings popup appears
 		context.overlay.addEventListener(Event.ENTER_FRAME, onFrame);
 		context.log("Classic Settings mod loaded.");
 	}
 
 	override public function dispose():Void {
+		var stage:Dynamic = (context != null && context.overlay != null) ? context.overlay.stage : null;
+		if (stage == null && facade != null) stage = Reflect.field(facade, "stageRef");
+		if (stage != null) {
+			try {
+				stage.removeEventListener(Event.ADDED, onDisplayObjectAdded, true);
+			} catch (eStage:Dynamic) {}
+		}
 		if (context != null && context.overlay != null) {
 			context.overlay.removeEventListener(Event.ENTER_FRAME, onFrame);
 		}
@@ -59,7 +76,32 @@ class Main extends Mod {
 			art = null;
 		}
 		reskinnedClips.clear();
+		hookedPopups.clear();
 		facade = null;
+	}
+
+	function onDisplayObjectAdded(event:Event):Void {
+		if (facade == null || reskinner == null || art == null || !art.townReady) return;
+		try {
+			var target:Dynamic = event.target;
+			if (target != null && Std.isOfType(target, MovieClip)) {
+				var mc:MovieClip = cast target;
+				if (isSettingsPopupClip(mc) && !reskinnedClips.exists(mc)) {
+					// Hide immediately so unskinned menu and white tabs do not flash before reskin
+					mc.visible = false;
+					var popupObj = findSettingsPopupObject();
+					if (reskinner.reskin(mc, popupObj)) {
+						reskinnedClips.set(mc, true);
+						if (popupObj != null) hookedPopups.set(popupObj, true);
+						reskinner.ensureColors(popupObj, mc);
+						mc.visible = true;
+						context.log("Settings popup reskinned immediately on ADDED event.");
+					} else {
+						mc.visible = true;
+					}
+				}
+			}
+		} catch (e:Dynamic) {}
 	}
 
 	function onFrame(event:Event):Void {
@@ -68,13 +110,28 @@ class Main extends Mod {
 			return;
 		}
 
-		// Look for an open settings popup that hasn't been reskinned yet
+		var topLayer:String = facade.menuNavigationController != null ? facade.menuNavigationController.getTopUILayer() : null;
+		if (topLayer != "SETTINGS_MENU" && topLayer != "SETTINGS_RESET_CONFIRM_POPUP") {
+			return;
+		}
+
+		// Look for an open settings popup that hasn't been reskinned yet, or whose list hasn't been hooked yet
 		var popupClip = findSettingsPopupClip();
-		if (popupClip != null && !reskinnedClips.exists(popupClip)) {
-			var popupObj = findSettingsPopupObject();
-			if (reskinner.reskin(popupClip, popupObj)) {
-				reskinnedClips.set(popupClip, true);
-				context.log("Settings popup reskinned successfully.");
+		var popupObj = findSettingsPopupObject();
+		if (popupClip != null) {
+			if (!reskinnedClips.exists(popupClip) || (popupObj != null && !hookedPopups.exists(popupObj))) {
+				if (reskinner.reskin(popupClip, popupObj)) {
+					reskinnedClips.set(popupClip, true);
+					if (popupObj != null) hookedPopups.set(popupObj, true);
+					reskinner.ensureColors(popupObj, popupClip);
+					popupClip.visible = true;
+					context.log("Settings popup fully reskinned and revealed.");
+				}
+			} else {
+				reskinner.ensureColors(popupObj, popupClip);
+				if (!popupClip.visible) {
+					popupClip.visible = true;
+				}
 			}
 		}
 	}

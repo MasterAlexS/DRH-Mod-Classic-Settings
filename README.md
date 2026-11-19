@@ -13,6 +13,7 @@ Brings the authentic pre-1.0 Dungeon Rampage look and feel to the settings scree
   - Setting descriptions in readable parchment tan (`#D4C4B0`).
   - Values and the reset button in clean white.
   - Soft, feathered drop shadows across all text for improved readability and that authentic retro comic feel.
-- **100% Native & Compatible**: Leaves all game controls (checkboxes, sliders, dropdowns, keybinds, and scrollbars) completely intact and functional, with zero gameplay bugs or mod conflicts.
+- **Instant Stage Reskin**: Hooks display list addition during the stage capture phase to style `SettingsPopup` before its first frame renders, preventing visual flicker of unskinned assets or default white text.
+- **Dynamic Category Styling**: Automatically applies classic bold gold typography and text formatting to custom mod tabs (such as those registered via **Custom Settings API**).
+- **100% Native & Compatible**: Leaves all game controls (checkboxes, sliders, dropdowns, keybinds, and scrollbars) completely intact and functional, with full gamepad and keyboard navigation support.
 <!-- /drh:show -->
-

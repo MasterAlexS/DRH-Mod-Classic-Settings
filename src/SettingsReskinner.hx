@@ -345,6 +345,7 @@ class SettingsReskinner {
 					if (fmt != null) {
 						fmt.color = GOLD_COLOR;
 						tf.defaultTextFormat = fmt;
+						tf.setTextFormat(fmt);
 					}
 					tf.filters = makeBoldGoldShadow();
 				} else if (Std.isOfType(child, DisplayObjectContainer)) {
@@ -474,6 +475,37 @@ class SettingsReskinner {
 				}
 			}
 			i++;
+		}
+	}
+
+	public function styleAllVisibleRows(popup:SettingsPopup):Void {
+		if (popup == null) return;
+		var list:Null<SettingsList> = @:privateAccess popup.mList;
+		if (list == null) return;
+		var rows:Dynamic = @:privateAccess list.mRows;
+		if (rows == null) return;
+		for (row in rows) {
+			styleRow(row);
+		}
+	}
+
+	public function ensureColors(popup:Null<SettingsPopup>, clip:Null<MovieClip>):Void {
+		if (clip != null) {
+			styleCategoryTabsFromClip(clip);
+			styleResetButtonFromClip(clip);
+		}
+		if (popup != null) {
+			var list:Null<SettingsList> = @:privateAccess popup.mList;
+			if (list != null) {
+				var rows:Dynamic = @:privateAccess list.mRows;
+				if (rows != null && rows.length > 0) {
+					var firstRow:Dynamic = rows[0];
+					var nameLabel:Null<TextField> = (firstRow != null) ? @:privateAccess firstRow.mNameLabel : null;
+					if (nameLabel != null && nameLabel.textColor != GOLD_COLOR) {
+						styleAllVisibleRows(popup);
+					}
+				}
+			}
 		}
 	}
 
