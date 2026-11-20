@@ -82,11 +82,13 @@ class Main extends Mod {
 
 	function onDisplayObjectAdded(event:Event):Void {
 		if (facade == null || reskinner == null || art == null || !art.townReady) return;
+		var targetMc:Null<MovieClip> = null;
 		try {
 			var target:Dynamic = event.target;
 			if (target != null && Std.isOfType(target, MovieClip)) {
 				var mc:MovieClip = cast target;
 				if (isSettingsPopupClip(mc) && !reskinnedClips.exists(mc)) {
+					targetMc = mc;
 					// Hide immediately so unskinned menu and white tabs do not flash before reskin
 					mc.visible = false;
 					var popupObj = findSettingsPopupObject();
@@ -94,14 +96,19 @@ class Main extends Mod {
 						reskinnedClips.set(mc, true);
 						if (popupObj != null) hookedPopups.set(popupObj, true);
 						reskinner.ensureColors(popupObj, mc);
-						mc.visible = true;
 						context.log("Settings popup reskinned immediately on ADDED event.");
-					} else {
-						mc.visible = true;
 					}
+					mc.visible = true;
 				}
 			}
-		} catch (e:Dynamic) {}
+		} catch (e:Dynamic) {
+			if (targetMc != null) {
+				targetMc.visible = true;
+			}
+			if (context != null) {
+				context.log("Warning: Settings popup reskin encountered an exception, restored visibility: " + Std.string(e));
+			}
+		}
 	}
 
 	function onFrame(event:Event):Void {
